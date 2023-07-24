@@ -1,11 +1,12 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { fastifyPlugin } from 'fastify-plugin';
-import { fastifyJwt, type FastifyJWTOptions } from '@fastify/jwt';
-import { config } from '@/config/secret';
+import type { Config } from '@/config/secret';
 
-export async function jwtAuth(app: FastifyInstance, opts: FastifyJWTOptions) {
+import { fastifyPlugin } from 'fastify-plugin';
+import { fastifyJwt } from '@fastify/jwt';
+
+export async function jwtAuth(app: FastifyInstance, opts: Config) {
   app.register(fastifyJwt, {
-    secret: config.JWT_SECRET,
+    secret: opts.JWT_SECRET,
   });
 
   app.decorate(

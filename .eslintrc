@@ -15,7 +15,8 @@
         "semi": true
       }
     ],
-    "import/no-default-export": "error"
+    "import/no-default-export": "error",
+    "no-redeclare": "off"
   },
   "overrides": [
     {

@@ -1,20 +1,22 @@
 import { fastify, type FastifyServerOptions } from 'fastify';
 import { fastifyAutoload } from '@fastify/autoload';
-
 import { join } from 'node:path';
-
 import { nextUsageRoute } from './modules/nextUsage';
 import { healthCheckRoute } from './modules/healthCheck';
+import { Config } from './config/secret';
 
 export async function buildApp(opts: FastifyServerOptions = {}) {
   const app = fastify(opts);
 
   try {
-    app.register(fastifyAutoload, { dir: join(__dirname, 'plugins') });
+    app.register(fastifyAutoload, {
+      dir: join(__dirname, 'plugins'),
+      options: Config,
+    });
     app.register(healthCheckRoute, { prefix: '/v2' });
     app.register(nextUsageRoute, { prefix: '/v2' });
   } catch (error) {
-    app.log.fatal(error, 'setup app error');
+    app.log.fatal({ error }, 'setup app error');
     throw error;
   }
 

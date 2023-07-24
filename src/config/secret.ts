@@ -50,4 +50,5 @@ if (!_env.success) {
   throw new Error(`Missing environment variables:\n  ${errorMessage}`);
 }
 
-export const config = _env.data;
+export type Config = z.infer<typeof envSchema>;
+export const Config = _env.data;

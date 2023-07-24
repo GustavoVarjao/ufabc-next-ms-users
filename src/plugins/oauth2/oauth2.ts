@@ -1,8 +1,9 @@
-import { FastifyInstance } from 'fastify';
-import fastifyPlugin from 'fastify-plugin';
+import type { FastifyInstance } from 'fastify';
+import type { Config } from '@/config/secret';
+import { fastifyPlugin } from 'fastify-plugin';
 import { FastifyOAuth2Options, fastifyOauth2 } from '@fastify/oauth2';
-import { config } from '@/config/secret';
 import { getOauthInfo } from '@/helpers/sfetch/get-oauth-info';
+import { UserModel } from '@/model/User';
 
 /* const sessionConfig = {
   secret: config.GRANT_SECRET,
@@ -12,35 +13,35 @@ import { getOauthInfo } from '@/helpers/sfetch/get-oauth-info';
   },
 } satisfies FastifySessionOptions; */
 
-const facebookOauth2config = {
-  name: 'FacebookOauth2Provider',
-  scope: ['profile', 'email'],
-  credentials: {
-    client: {
-      id: config.OAUTH_FACEBOOK_KEY,
-      secret: config.OAUTH_FACEBOOK_SECRET,
+export async function oauth2(app: FastifyInstance, opts: Config) {
+  const facebookOauth2config = {
+    name: 'FacebookOauth2Provider',
+    scope: ['profile', 'email'],
+    credentials: {
+      client: {
+        id: opts.OAUTH_FACEBOOK_KEY,
+        secret: opts.OAUTH_FACEBOOK_SECRET,
+      },
+      auth: fastifyOauth2.FACEBOOK_CONFIGURATION,
     },
-    auth: fastifyOauth2.FACEBOOK_CONFIGURATION,
-  },
-  startRedirectPath: '/login/facebook',
-  callbackUri: 'http://localhost:5000/oauth/facebook',
-} satisfies FastifyOAuth2Options;
+    startRedirectPath: '/login/facebook',
+    callbackUri: 'http://localhost:5000/oauth/facebook',
+  } satisfies FastifyOAuth2Options;
 
-const googleOauth2config = {
-  name: 'GoogleOauth2Provider',
-  scope: ['profile', 'email'],
-  credentials: {
-    client: {
-      id: config.OAUTH_GOOGLE_CLIENT_ID,
-      secret: config.OAUTH_GOOGLE_SECRET,
+  const googleOauth2config = {
+    name: 'GoogleOauth2Provider',
+    scope: ['profile', 'email'],
+    credentials: {
+      client: {
+        id: opts.OAUTH_GOOGLE_CLIENT_ID,
+        secret: opts.OAUTH_GOOGLE_SECRET,
+      },
+      auth: fastifyOauth2.GOOGLE_CONFIGURATION,
     },
-    auth: fastifyOauth2.GOOGLE_CONFIGURATION,
-  },
-  startRedirectPath: '/login/google',
-  callbackUri: 'http://localhost:5000/oauth/google',
-} satisfies FastifyOAuth2Options;
+    startRedirectPath: '/login/google',
+    callbackUri: 'http://localhost:5000/oauth/google',
+  } satisfies FastifyOAuth2Options;
 
-export async function oauth2(app: FastifyInstance, opts: {}) {
   app.register(fastifyOauth2, googleOauth2config);
   app.register(fastifyOauth2, facebookOauth2config);
 
@@ -126,8 +127,7 @@ export async function oauth2(app: FastifyInstance, opts: {}) {
       }; 
       */
 
-      const WEB_URL =
-        config.NODE_ENV === 'dev' ? config.ORIGIN : config.WEB_URL;
+      const WEB_URL = opts.NODE_ENV === 'dev' ? opts.ORIGIN : opts.WEB_URL;
 
       reply
         .status(200)
@@ -139,4 +139,6 @@ export async function oauth2(app: FastifyInstance, opts: {}) {
   });
 }
 
-export default fastifyPlugin(oauth2);
+export default fastifyPlugin(oauth2, {
+  name: 'Oauth2',
+});
