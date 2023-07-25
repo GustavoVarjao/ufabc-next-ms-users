@@ -3,7 +3,7 @@ import { OAuth2Namespace } from '@fastify/oauth2';
 declare module 'fastify' {
   export interface FastifyInstance {
     mongoose: Mongoose;
-    FacebookOauth2Provider: OAuth2Namespace;
-    GoogleOauth2Provider: OAuth2Namespace;
+    google: OAuth2Namespace;
+    facebook: OAuth2Namespace;
   }
 }

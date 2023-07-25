@@ -5,6 +5,7 @@ import { request } from 'undici';
 
 export async function getGoogleUserDetails(token: Token) {
   // TODO: identify what we need from the user and perform the filtering here
+  // TODO: Add logging for this scope
   try {
     const res = await request(
       'https://people.googleapis.com/v1/people/me?personFields=emailAddresses',
@@ -31,4 +32,8 @@ export async function getGoogleUserDetails(token: Token) {
     console.log('erros', error);
     throw error;
   }
+}
+
+export async function getFacebookUserDetails(token: Token) {
+  return 'fé em deus que ele é justo';
 }
