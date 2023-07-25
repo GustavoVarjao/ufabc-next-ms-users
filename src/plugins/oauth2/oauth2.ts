@@ -51,11 +51,10 @@ export async function oauth2(app: FastifyInstance, opts: Config) {
         await this.GoogleOauth2Provider.getAccessTokenFromAuthorizationCodeFlow(
           request,
         );
-      request.log.info({ token }, 'token');
 
-      const { user } = await getGoogleUserDetails(token);
+      const googleUser = await getGoogleUserDetails(token);
 
-      reply.status(200).send(user);
+      reply.status(200).send(googleUser);
     } catch (error) {
       reply.log.error({ error }, 'Error in oauth2');
       return reply.send(error);

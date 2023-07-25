@@ -2,7 +2,6 @@
 // TODO: implement zod here to validate this data
 
 // Common metadata types for the people api response
-
 const SOURCE_TYPE = {
   SOURCE_TYPE_UNSPECIFIED: 'SOURCE_TYPE_UNSPECIFIED',
   ACCOUNT: 'ACCOUNT',
@@ -12,9 +11,7 @@ const SOURCE_TYPE = {
   OTHER_CONTACT: 'OTHER_CONTACT',
   DOMAIN_CONTACT: 'DOMAIN_CONTACT	',
 } as const;
-
 type SourceType = keyof typeof SOURCE_TYPE;
-
 type Metadata = {
   primary: boolean;
   verified: boolean;
