@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Config } from '@/config/secret';
 import { fastifyPlugin } from 'fastify-plugin';
 import { FastifyOAuth2Options, fastifyOauth2 } from '@fastify/oauth2';
-import { getOauthInfo } from '@/helpers/sfetch/get-oauth-info';
+import { getGoogleUserDetails } from './utils/get-oauth-info';
 import { UserModel } from '@/model/User';
 
 /* const sessionConfig = {
@@ -39,36 +39,25 @@ export async function oauth2(app: FastifyInstance, opts: Config) {
       auth: fastifyOauth2.GOOGLE_CONFIGURATION,
     },
     startRedirectPath: '/login/google',
-    callbackUri: 'http://localhost:5000/oauth/google',
+    callbackUri: 'http://localhost:5000/login/google/callback',
   } satisfies FastifyOAuth2Options;
 
   app.register(fastifyOauth2, googleOauth2config);
   app.register(fastifyOauth2, facebookOauth2config);
 
-  app.get('/oauth/google', async function (request, reply) {
+  app.get('/login/google/callback', async function (request, reply) {
     try {
       const { token } =
         await this.GoogleOauth2Provider.getAccessTokenFromAuthorizationCodeFlow(
           request,
         );
-
       request.log.info({ token }, 'token');
-      const data = await getOauthInfo(
-        'https://www.googleapis.com/plus/v1/people/me',
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token.access_token}`,
-          },
-        },
-      );
 
-      console.log('data', data);
-      reply
-        .status(200)
-        .redirect('http://localhost:5500/?token="' + token.access_token);
+      const { user } = await getGoogleUserDetails(token);
+
+      reply.status(200).send(user);
     } catch (error) {
-      reply.log.fatal({ error }, 'Error in oauth2');
+      reply.log.error({ error }, 'Error in oauth2');
       return reply.send(error);
     }
   });
