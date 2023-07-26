@@ -35,5 +35,5 @@ export async function getGoogleUserDetails(token: Token) {
 }
 
 export async function getFacebookUserDetails(token: Token) {
-  return 'fé em deus que ele é justo';
+  return { msg: 'not implemented yet' };
 }
