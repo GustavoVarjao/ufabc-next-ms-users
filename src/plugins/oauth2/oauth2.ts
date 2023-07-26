@@ -6,11 +6,7 @@ import {
   getGoogleUserDetails,
 } from './utils/get-oauth-info';
 import { Config } from '@/config/secret';
-import {
-  ProviderConfig,
-  Providers,
-  UfabcNextOauth2Options,
-} from './types/Oauth2Opts';
+import { UfabcNextOauth2Options } from './types/Oauth2Opts';
 
 /* const sessionConfig = {
   secret: config.GRANT_SECRET,
@@ -49,9 +45,13 @@ export async function oauth2(
   app: FastifyInstance,
   opts: UfabcNextOauth2Options,
 ) {
-  for (const provider in providers) {
-    const startRedirectPath = `/login/${provider}`;
-    const callbackUri = `http://localhost:5000/login/${provider}/callback`;
+  const { provider } = opts;
+
+  if (!providers[provider]) {
+    throw new Error(`Unknown Provider ${provider}`);
+  }
+  const startRedirectPath = `/login/${provider}`;
+  const callbackUri = `http://localhost:5000/login/${provider}/callback`;
 
     app.register(fastifyOauth2, {
       name: provider,
