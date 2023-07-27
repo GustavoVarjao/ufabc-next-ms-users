@@ -1,9 +1,14 @@
 // Implement here the helpers for respective providers
 import type { Token } from '@fastify/oauth2';
-import type { GoogleUser } from '../types/User';
+import type {
+  GoogleUser,
+  UfabcNextOAuth2User,
+} from '../types/UfabcNextOAuth2User';
 import { ofetch } from 'ofetch';
 
-export async function getGoogleUserDetails(token: Token) {
+export async function getGoogleUserDetails(
+  token: Token,
+): Promise<UfabcNextOAuth2User> {
   // TODO: identify what we need from the user and perform the filtering here
   // TODO: Add logging for this scope
   try {
@@ -15,16 +20,20 @@ export async function getGoogleUserDetails(token: Token) {
         },
       },
     );
-    const [{ email, googleEmailId }] = user.emailAddresses.map(
+    const [{ email, providerId }] = user.emailAddresses.map(
       ({ value, metadata }) => ({
         email: value,
-        googleEmailId: metadata.source.id,
+        providerId: metadata.source.id,
       }),
     );
 
+    if (!providerId) {
+      throw new Error('Missing Google id');
+    }
+
     return {
       email,
-      googleEmailId,
+      providerId,
       provider: 'google',
     };
   } catch (error) {
@@ -33,6 +42,12 @@ export async function getGoogleUserDetails(token: Token) {
   }
 }
 
-export async function getFacebookUserDetails(token: Token) {
-  return { msg: 'not implemented yet' };
+export async function getFacebookUserDetails(
+  token: Token,
+): Promise<UfabcNextOAuth2User> {
+  return {
+    provider: 'facebook',
+    email: '',
+    providerId: '',
+  };
 }

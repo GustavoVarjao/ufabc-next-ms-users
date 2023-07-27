@@ -1,15 +1,15 @@
 import type { FastifyInstance } from 'fastify';
 import type { Config } from '@/config/secret';
-import { fastifyPlugin } from 'fastify-plugin';
 import { fastifyOauth2 } from '@fastify/oauth2';
 import {
   getFacebookUserDetails,
   getGoogleUserDetails,
 } from './utils/get-oauth-info';
 import { type Providers, objectKeys } from './types/Oauth2Opts';
+import { UserModel } from '@/model/User';
 
 // TODO: implement session token
-export async function oauth2(app: FastifyInstance, opts: Config) {
+export default async function oauth2(app: FastifyInstance, opts: Config) {
   const providers = {
     google: {
       credentials: {
@@ -57,11 +57,37 @@ export async function oauth2(app: FastifyInstance, opts: Config) {
       try {
         // eslint-disable-next-line
         const { token } = await this[provider].getAccessTokenFromAuthorizationCodeFlow(request);
-        const user = await providers[provider].getUserDetails(token);
+        // TODO: understand how to know what comes from here
+        const oauthUser = await providers[provider].getUserDetails(token);
+        request.log.info({ oauthUser }, 'mostre o user');
+        const findUserQuery = [
+          { 'oauth.google': oauthUser.providerId },
+          { 'oauth.facebook': oauthUser.providerId },
+        ];
+        let user = await UserModel.findOne({
+          $or: findUserQuery,
+        });
+        request.log.info({ user }, 'show the user query, probs null');
+        // Might need to change the oauth schema for the new version
+        if (user) {
+          user.set({
+            'oauth.providerId': oauthUser.providerId,
+            'oauth.email': oauthUser.email,
+          });
+        } else {
+          user = new UserModel({
+            oauth: {
+              email: oauthUser.email,
+              providerId: oauthUser.providerId,
+            },
+          });
+        }
+
+        const dbUser = await user.save();
 
         return reply.send({
           msg: 'cool',
-          user,
+          dbUser,
         });
       } catch (error) {
         reply.log.error({ error }, 'Error in oauth2');
@@ -70,7 +96,3 @@ export async function oauth2(app: FastifyInstance, opts: Config) {
     });
   }
 }
-
-export default fastifyPlugin(oauth2, {
-  name: 'Oauth2',
-});

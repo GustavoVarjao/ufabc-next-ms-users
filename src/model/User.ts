@@ -40,6 +40,11 @@ const userSchema = new Schema<User, UserModel, UserMethods>({
     type: Boolean,
     default: true,
   },
+  oauth: {
+    providerId: String,
+    email: String,
+    picture: String,
+  },
 });
 
 userSchema.virtual('isFilled').get(function () {
