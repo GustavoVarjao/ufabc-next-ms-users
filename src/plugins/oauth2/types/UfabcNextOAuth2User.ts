@@ -2,6 +2,7 @@
 // TODO: implement zod here to validate this data
 
 // Common metadata types for the people api response
+/* GOOGLE ONLY */
 const SOURCE_TYPE = {
   SOURCE_TYPE_UNSPECIFIED: 'SOURCE_TYPE_UNSPECIFIED',
   ACCOUNT: 'ACCOUNT',
@@ -34,4 +35,11 @@ export type GoogleUser = {
   readonly resourceName: string;
   readonly etag: string;
   emailAddresses: EmailAddresses[];
+};
+
+export type UfabcNextOAuth2User = {
+  email: string;
+  providerId: string;
+  provider: string;
+  picture?: string;
 };
