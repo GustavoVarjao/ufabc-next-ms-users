@@ -1,57 +1,43 @@
 import type { FastifyInstance } from 'fastify';
+import type { Config } from '@/config/secret';
 import { fastifyPlugin } from 'fastify-plugin';
 import { fastifyOauth2 } from '@fastify/oauth2';
 import {
   getFacebookUserDetails,
   getGoogleUserDetails,
 } from './utils/get-oauth-info';
-import { Config } from '@/config/secret';
-import { UfabcNextOauth2Options } from './types/Oauth2Opts';
+import { type Providers, objectKeys } from './types/Oauth2Opts';
 
-/* const sessionConfig = {
-  secret: config.GRANT_SECRET,
-  cookie: {
-    secure: 'auto',
-    maxAge: 604800000, // TTL (one week)
-  },
-} satisfies FastifySessionOptions; */
-
-const providers: Providers = {
-  google: {
-    config: fastifyOauth2.GOOGLE_CONFIGURATION,
-    scope: ['profile', 'email'],
-    credentials: {
-      client: {
-        id: Config.OAUTH_GOOGLE_CLIENT_ID,
-        secret: Config.OAUTH_GOOGLE_SECRET,
+// TODO: implement session token
+export async function oauth2(app: FastifyInstance, opts: Config) {
+  const providers = {
+    google: {
+      config: fastifyOauth2.GOOGLE_CONFIGURATION,
+      scope: ['profile', 'email'],
+      credentials: {
+        client: {
+          id: opts.OAUTH_GOOGLE_CLIENT_ID,
+          secret: opts.OAUTH_GOOGLE_SECRET,
+        },
       },
+      getUserDetails: getGoogleUserDetails,
     },
-    getUserDetails: getGoogleUserDetails,
-  },
-  facebook: {
-    config: fastifyOauth2.FACEBOOK_CONFIGURATION,
-    credentials: {
-      client: {
-        id: Config.OAUTH_FACEBOOK_KEY,
-        secret: Config.OAUTH_FACEBOOK_SECRET,
+    facebook: {
+      config: fastifyOauth2.FACEBOOK_CONFIGURATION,
+      credentials: {
+        client: {
+          id: opts.OAUTH_FACEBOOK_KEY,
+          secret: opts.OAUTH_FACEBOOK_SECRET,
+        },
       },
+      scope: ['profile', 'email'],
+      getUserDetails: getFacebookUserDetails,
     },
-    scope: ['profile', 'email'],
-    getUserDetails: getFacebookUserDetails,
-  },
-};
+  } satisfies Providers;
 
-export async function oauth2(
-  app: FastifyInstance,
-  opts: UfabcNextOauth2Options,
-) {
-  const { provider } = opts;
-
-  if (!providers[provider]) {
-    throw new Error(`Unknown Provider ${provider}`);
-  }
-  const startRedirectPath = `/login/${provider}`;
-  const callbackUri = `http://localhost:5000/login/${provider}/callback`;
+  for (const provider of objectKeys(providers)) {
+    const startRedirectPath = `/login/${provider}`;
+    const callbackUri = `http://localhost:5000/login/${provider}/callback`;
 
     app.register(fastifyOauth2, {
       name: provider,
@@ -71,7 +57,6 @@ export async function oauth2(
       try {
         // eslint-disable-next-line
         const { token } = await this[provider].getAccessTokenFromAuthorizationCodeFlow(request);
-
         const user = await providers[provider].getUserDetails(token);
 
         return reply.send({
