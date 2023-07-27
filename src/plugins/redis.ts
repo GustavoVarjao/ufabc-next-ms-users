@@ -1,9 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import type { Config } from '@/config/secret';
-import { fastifyPlugin } from 'fastify-plugin';
 import { fastifyRedis } from '@fastify/redis';
 
-export async function redis(app: FastifyInstance, opts: Config) {
+export default async function redis(app: FastifyInstance, opts: Config) {
   try {
     app.register(fastifyRedis, {
       host: opts.HOST,
@@ -16,7 +15,3 @@ export async function redis(app: FastifyInstance, opts: Config) {
     app.log.error({ error }, 'Error Connecting to mongodb');
   }
 }
-
-export default fastifyPlugin(redis, {
-  name: 'Redis',
-});

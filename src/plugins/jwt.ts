@@ -1,10 +1,8 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { Config } from '@/config/secret';
-
-import { fastifyPlugin } from 'fastify-plugin';
 import { fastifyJwt } from '@fastify/jwt';
 
-export async function jwtAuth(app: FastifyInstance, opts: Config) {
+export default async function jwtAuth(app: FastifyInstance, opts: Config) {
   app.register(fastifyJwt, {
     secret: opts.JWT_SECRET,
   });
@@ -23,7 +21,3 @@ export async function jwtAuth(app: FastifyInstance, opts: Config) {
     },
   );
 }
-
-export default fastifyPlugin(jwtAuth, {
-  name: 'JsonWebToken',
-});

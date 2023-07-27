@@ -11,6 +11,7 @@ export async function buildApp(opts: FastifyServerOptions = {}) {
   try {
     app.register(fastifyAutoload, {
       dir: join(__dirname, 'plugins'),
+      dirNameRoutePrefix: false,
       options: Config,
     });
     app.register(healthCheckRoute, { prefix: '/v2' });
