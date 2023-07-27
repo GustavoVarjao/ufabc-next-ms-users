@@ -54,25 +54,22 @@ export default async function oauth2(app: FastifyInstance, opts: Config) {
     });
 
     app.get(`/login/${provider}/callback`, async function (request, reply) {
+      request.log.info({ params: request.params }, 'params query');
       try {
         // eslint-disable-next-line
         const { token } = await this[provider].getAccessTokenFromAuthorizationCodeFlow(request);
         // TODO: understand how to know what comes from here
         const oauthUser = await providers[provider].getUserDetails(token);
-        request.log.info({ oauthUser }, 'mostre o user');
-        const findUserQuery = [
-          { 'oauth.google': oauthUser.providerId },
-          { 'oauth.facebook': oauthUser.providerId },
-        ];
+        const findUserQuery = [{ 'oauth.providerId': oauthUser.providerId }];
         let user = await UserModel.findOne({
           $or: findUserQuery,
         });
-        request.log.info({ user }, 'show the user query, probs null');
         // Might need to change the oauth schema for the new version
         if (user) {
           user.set({
             'oauth.providerId': oauthUser.providerId,
             'oauth.email': oauthUser.email,
+            active: true,
           });
         } else {
           user = new UserModel({
@@ -83,12 +80,13 @@ export default async function oauth2(app: FastifyInstance, opts: Config) {
           });
         }
 
-        const dbUser = await user.save();
-
-        return reply.send({
-          msg: 'cool',
-          dbUser,
-        });
+        await user.save();
+        const redirectTo =
+          opts.NODE_ENV === 'dev'
+            ? `${opts.WEB_URL}/login?token=${user.generateJWT()}`
+            : `ufabcnext://login?token=${user.generateJWT()}`;
+        console.log('mosra pra mim uma parada', redirectTo);
+        return reply.redirect(200, redirectTo);
       } catch (error) {
         reply.log.error({ error }, 'Error in oauth2');
         return reply.send(error);
@@ -96,3 +94,5 @@ export default async function oauth2(app: FastifyInstance, opts: Config) {
     });
   }
 }
+
+export const autoPrefix = '/v2';
