@@ -12,24 +12,24 @@ import { type Providers, objectKeys } from './types/Oauth2Opts';
 export async function oauth2(app: FastifyInstance, opts: Config) {
   const providers = {
     google: {
-      config: fastifyOauth2.GOOGLE_CONFIGURATION,
-      scope: ['profile', 'email'],
       credentials: {
         client: {
           id: opts.OAUTH_GOOGLE_CLIENT_ID,
           secret: opts.OAUTH_GOOGLE_SECRET,
         },
       },
+      config: fastifyOauth2.GOOGLE_CONFIGURATION,
+      scope: ['profile', 'email'],
       getUserDetails: getGoogleUserDetails,
     },
     facebook: {
-      config: fastifyOauth2.FACEBOOK_CONFIGURATION,
       credentials: {
         client: {
           id: opts.OAUTH_FACEBOOK_KEY,
           secret: opts.OAUTH_FACEBOOK_SECRET,
         },
       },
+      config: fastifyOauth2.FACEBOOK_CONFIGURATION,
       scope: ['profile', 'email'],
       getUserDetails: getFacebookUserDetails,
     },

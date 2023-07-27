@@ -1,15 +1,14 @@
-import type { ProviderConfiguration, Token } from '@fastify/oauth2';
+import type {
+  Credentials,
+  ProviderConfiguration,
+  Token,
+} from '@fastify/oauth2';
 
 type ProviderName = 'google' | 'facebook';
 type ProviderConfig = {
   config: ProviderConfiguration;
   scope: string[];
-  credentials: {
-    client: {
-      id: string;
-      secret: string;
-    };
-  };
+  credentials: Omit<Credentials, 'auth'>;
   getUserDetails: (token: Token) => Promise<Record<string, unknown>>;
 };
 export type Providers = Record<ProviderName, ProviderConfig>;
