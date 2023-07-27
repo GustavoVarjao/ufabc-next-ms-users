@@ -1,5 +1,6 @@
 import { fastify, type FastifyServerOptions } from 'fastify';
 import { fastifyAutoload } from '@fastify/autoload';
+import { fastifyCors } from '@fastify/cors';
 import { join } from 'node:path';
 import { nextUsageRoute } from './modules/nextUsage';
 import { healthCheckRoute } from './modules/healthCheck';
@@ -13,6 +14,9 @@ export async function buildApp(opts: FastifyServerOptions = {}) {
       dir: join(__dirname, 'plugins'),
       dirNameRoutePrefix: false,
       options: Config,
+    });
+    app.register(fastifyCors, {
+      origin: '*',
     });
     app.register(healthCheckRoute, { prefix: '/v2' });
     app.register(nextUsageRoute, { prefix: '/v2' });

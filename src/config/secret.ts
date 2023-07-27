@@ -12,7 +12,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['dev', 'test', 'prod']).default('dev'),
   PORT: z.coerce.number().default(3000),
   HOST: z.string().min(4).default('localhost'),
-  ORIGIN: z.string().url().default('http://localhost:5000'),
+  WEB_URL: z.string().url(),
   JWT_SECRET: z.string().min(16),
   GRANT_SECRET: z.string().min(32),
 
