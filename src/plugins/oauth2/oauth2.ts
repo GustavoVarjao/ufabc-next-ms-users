@@ -1,4 +1,4 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { Config } from '@/config/secret';
 import { fastifyOauth2 } from '@fastify/oauth2';
 import {
@@ -7,6 +7,13 @@ import {
 } from './utils/get-oauth-info';
 import { type Providers, objectKeys } from './types/Oauth2Opts';
 import { UserModel } from '@/model/User';
+
+type Query = {
+  // Is User in mobile
+  inApp: string;
+  // Yet to understand
+  userId: string;
+};
 
 // TODO: implement session token
 export default async function oauth2(app: FastifyInstance, opts: Config) {
@@ -53,46 +60,63 @@ export default async function oauth2(app: FastifyInstance, opts: Config) {
       callbackUri,
     });
 
-    app.get(`/login/${provider}/callback`, async function (request, reply) {
-      request.log.info({ params: request.params }, 'params query');
-      try {
-        // eslint-disable-next-line
+    app.get(
+      `/login/${provider}/callback`,
+      async function (request: FastifyRequest<{ Querystring: Query }>, reply) {
+        try {
+          const { inApp = '', userId = '' } = request.query;
+          // eslint-disable-next-line
         const { token } = await this[provider].getAccessTokenFromAuthorizationCodeFlow(request);
-        // TODO: understand how to know what comes from here
-        const oauthUser = await providers[provider].getUserDetails(token);
-        const findUserQuery = [{ 'oauth.providerId': oauthUser.providerId }];
-        let user = await UserModel.findOne({
-          $or: findUserQuery,
-        });
-        // Might need to change the oauth schema for the new version
-        if (user) {
-          user.set({
-            'oauth.providerId': oauthUser.providerId,
-            'oauth.email': oauthUser.email,
-            active: true,
-          });
-        } else {
-          user = new UserModel({
-            oauth: {
-              email: oauthUser.email,
-              providerId: oauthUser.providerId,
-            },
-          });
-        }
+          // TODO: understand how to know what comes from here
+          const oauthUser = await providers[provider].getUserDetails(token);
+          const findUserQuery = [{ 'oauth.providerId': oauthUser.providerId }];
 
-        await user.save();
-        const redirectTo =
-          opts.NODE_ENV === 'dev'
-            ? `${opts.WEB_URL}/login?token=${user.generateJWT()}`
-            : `ufabcnext://login?token=${user.generateJWT()}`;
-        console.log('mosra pra mim uma parada', redirectTo);
-        return reply.redirect(200, redirectTo);
-      } catch (error) {
-        reply.log.error({ error }, 'Error in oauth2');
-        return reply.send(error);
-      }
-    });
+          if (userId) {
+            // @ts-ignore for now
+            findUserQuery.push({ _id: userId.split('?')[0] });
+          }
+
+          let user = await UserModel.findOne({
+            $or: findUserQuery,
+          });
+          // Might need to change the oauth schema for the new version
+          if (user) {
+            if (userId) {
+              user.set('active', true);
+            }
+            user.set({
+              'oauth.providerId': oauthUser.providerId,
+              'oauth.email': oauthUser.email,
+              'oauth.provider': oauthUser.provider,
+            });
+          } else {
+            user = new UserModel({
+              oauth: {
+                email: oauthUser.email,
+                providerId: oauthUser.providerId,
+                provider: oauthUser.provider,
+              },
+            });
+          }
+
+          await user.save();
+
+          const isLocal =
+            opts.NODE_ENV === 'dev'
+              ? `${opts.WEB_URL}/login?token=${user.generateJWT()}`
+              : '';
+          const isMobile =
+            inApp.split('?')[0] === 'true'
+              ? `ufabcnext://login?token=${user.generateJWT()}`
+              : isLocal;
+
+          const redirectTo = isMobile || isLocal;
+          return reply.redirect(redirectTo);
+        } catch (error) {
+          reply.log.error({ error }, 'Error in oauth2');
+          return reply.send(error);
+        }
+      },
+    );
   }
 }
-
-export const autoPrefix = '/v2';

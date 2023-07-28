@@ -41,8 +41,9 @@ const userSchema = new Schema<User, UserModel, UserMethods>({
     default: true,
   },
   oauth: {
-    providerId: String,
     email: String,
+    provider: String,
+    providerId: String,
     picture: String,
   },
 });

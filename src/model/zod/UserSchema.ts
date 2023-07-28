@@ -3,11 +3,9 @@ import { ObjectId } from 'mongoose';
 
 const oAuthSchema = z.object({
   email: z.string(),
-  emailFacebook: z.string().email().optional(),
-  emailGoogle: z.string().email().optional(),
-  facebook: z.string(),
-  google: z.string(),
-  picture: z.string(),
+  provider: z.string(),
+  providerId: z.string(),
+  picture: z.string().optional(),
 });
 
 const deviceSchema = z.object({
