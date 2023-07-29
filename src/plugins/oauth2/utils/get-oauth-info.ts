@@ -45,9 +45,16 @@ export async function getGoogleUserDetails(
 export async function getFacebookUserDetails(
   token: Token,
 ): Promise<UfabcNextOAuth2User> {
+  // TODO: Do later with HTTPS
+  const user = await ofetch(`https://graph.facebook.com/v6.0/me`, {
+    headers: {
+      Authorization: `Bearer ${token.access_token}`,
+    },
+  });
+
   return {
+    providerId: user.id,
+    email: user.email,
     provider: 'facebook',
-    email: '',
-    providerId: '',
   };
 }

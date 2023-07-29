@@ -17,7 +17,7 @@ const envSchema = z.object({
   GRANT_SECRET: z.string().min(32),
 
   // OAUTH2
-  OAUTH_FACEBOOK_KEY: z.string(),
+  OAUTH_FACEBOOK_CLIENT_ID: z.string(),
   OAUTH_FACEBOOK_SECRET: z.string().min(16),
   OAUTH_GOOGLE_CLIENT_ID: z.string(),
   OAUTH_GOOGLE_SECRET: z.string().min(16),

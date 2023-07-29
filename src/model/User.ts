@@ -78,6 +78,8 @@ userSchema.method('generateJWT', function () {
   );
 });
 
+userSchema.method('sendConfirmation', function () {});
+
 userSchema.pre('save', async function (this: any) {
   if (this.isFilled && !this.confirmed) {
     this.sendConfirmation();
