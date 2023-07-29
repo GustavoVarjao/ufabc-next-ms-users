@@ -1,62 +1,122 @@
-import { FastifyInstance } from 'fastify';
-import fastifyPlugin from 'fastify-plugin';
-import { FastifyOAuth2Options, fastifyOauth2 } from '@fastify/oauth2';
-import { FastifySessionOptions } from '@fastify/session';
-import { config } from '@/config/secret';
-import { getOauthInfo } from '@/helpers/sfetch/get-oauth-info';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { Config } from '@/config/secret';
+import { fastifyOauth2 } from '@fastify/oauth2';
+import {
+  getFacebookUserDetails,
+  getGoogleUserDetails,
+} from './utils/get-oauth-info';
+import { type Providers, objectKeys } from './types/Oauth2Opts';
+import { UserModel } from '@/model/User';
 
-const sessionConfig = {
-  secret: config.GRANT_SECRET,
-  cookie: {
-    secure: 'auto',
-    maxAge: 604800000, // TTL (one week)
-  },
-} satisfies FastifySessionOptions;
+type Query = {
+  // Is User in mobile
+  inApp: string;
+  // Yet to understand
+  userId: string;
+};
 
-const oauth2config = {
-  name: 'GoogleOauth2Provider',
-  scope: ['profile', 'email'],
-  credentials: {
-    client: {
-      id: config.OAUTH_GOOGLE_CLIENT_ID,
-      secret: config.OAUTH_GOOGLE_SECRET,
-    },
-    auth: fastifyOauth2.GOOGLE_CONFIGURATION,
-  },
-  startRedirectPath: '/login/google',
-  callbackUri: 'http://localhost:5000/oauth/google',
-} satisfies FastifyOAuth2Options;
-
-export async function oauth2(app: FastifyInstance, opts: {}) {
-  app.register(fastifyOauth2, oauth2config);
-
-  app.get('/oauth/google', async function (request, reply) {
-    try {
-      const { token } =
-        await this.GoogleOauth2Provider.getAccessTokenFromAuthorizationCodeFlow(
-          request,
-        );
-
-      request.log.info({ token }, 'token');
-      const data = await getOauthInfo(
-        'https://www.googleapis.com/plus/v1/people/me',
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token.access_token}`,
-          },
+// TODO: implement session token
+export default async function oauth2(app: FastifyInstance, opts: Config) {
+  const providers = {
+    google: {
+      credentials: {
+        client: {
+          id: opts.OAUTH_GOOGLE_CLIENT_ID,
+          secret: opts.OAUTH_GOOGLE_SECRET,
         },
-      );
+      },
+      config: fastifyOauth2.GOOGLE_CONFIGURATION,
+      scope: ['profile', 'email'],
+      getUserDetails: getGoogleUserDetails,
+    },
+    facebook: {
+      credentials: {
+        client: {
+          id: opts.OAUTH_FACEBOOK_KEY,
+          secret: opts.OAUTH_FACEBOOK_SECRET,
+        },
+      },
+      config: fastifyOauth2.FACEBOOK_CONFIGURATION,
+      scope: ['public_profile', 'email'],
+      getUserDetails: getFacebookUserDetails,
+    },
+  } satisfies Providers;
 
-      console.log('data', data);
-      reply
-        .status(200)
-        .redirect('http://localhost:5500/?token="' + token.access_token);
-    } catch (error) {
-      reply.log.fatal({ error }, 'Error in oauth2');
-      return reply.send(error);
-    }
-  });
+  for (const provider of objectKeys(providers)) {
+    const startRedirectPath = `/login/${provider}`;
+    const callbackUri = `http://localhost:5000/login/${provider}/callback`;
+
+    app.register(fastifyOauth2, {
+      name: provider,
+      credentials: {
+        client: {
+          id: providers[provider].credentials.client.id,
+          secret: providers[provider].credentials.client.secret,
+        },
+        auth: providers[provider].config,
+      },
+      scope: providers[provider].scope,
+      startRedirectPath,
+      callbackUri,
+    });
+
+    app.get(
+      `/login/${provider}/callback`,
+      async function (request: FastifyRequest<{ Querystring: Query }>, reply) {
+        try {
+          const { inApp = '', userId = '' } = request.query;
+          // eslint-disable-next-line
+        const { token } = await this[provider].getAccessTokenFromAuthorizationCodeFlow(request);
+          // TODO: understand how to know what comes from here
+          const oauthUser = await providers[provider].getUserDetails(token);
+          const findUserQuery = [{ 'oauth.providerId': oauthUser.providerId }];
+
+          if (userId) {
+            // @ts-ignore for now
+            findUserQuery.push({ _id: userId.split('?')[0] });
+          }
+
+          let user = await UserModel.findOne({
+            $or: findUserQuery,
+          });
+          // Might need to change the oauth schema for the new version
+          if (user) {
+            if (userId) {
+              user.set('active', true);
+            }
+            user.set({
+              'oauth.providerId': oauthUser.providerId,
+              'oauth.email': oauthUser.email,
+              'oauth.provider': oauthUser.provider,
+            });
+          } else {
+            user = new UserModel({
+              oauth: {
+                email: oauthUser.email,
+                providerId: oauthUser.providerId,
+                provider: oauthUser.provider,
+              },
+            });
+          }
+
+          await user.save();
+
+          const isLocal =
+            opts.NODE_ENV === 'dev'
+              ? `${opts.WEB_URL}/login?token=${user.generateJWT()}`
+              : '';
+          const isMobile =
+            inApp.split('?')[0] === 'true'
+              ? `ufabcnext://login?token=${user.generateJWT()}`
+              : isLocal;
+
+          const redirectTo = isMobile || isLocal;
+          return reply.redirect(redirectTo);
+        } catch (error) {
+          reply.log.error({ error }, 'Error in oauth2');
+          return reply.send(error);
+        }
+      },
+    );
+  }
 }
-
-export default fastifyPlugin(oauth2);

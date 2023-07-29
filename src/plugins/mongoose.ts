@@ -1,29 +1,17 @@
 import type { FastifyInstance } from 'fastify';
-import { fastifyPlugin } from 'fastify-plugin';
-import { Connection, connect } from 'mongoose';
-import { config } from '@/config/secret';
+import type { Config } from '@/config/secret';
+import { connect } from 'mongoose';
 
-interface FastifyMongooseOptions {
-  readonly connection: Connection;
-}
-
-export async function mongoose(
-  app: FastifyInstance,
-  opts: FastifyMongooseOptions,
-) {
+export default async function mongoose(app: FastifyInstance, opts: Config) {
+  const connection = await connect(opts.MONGODB_CONNECTION_URL);
   try {
-    const connection = await connect(config.MONGODB_CONNECTION_URL);
     app.decorate('mongoose', connection);
     app.log.info(`Decorated the instance with mongoose`);
   } catch (error) {
-    app.log.error(error, 'Error Connecting to mongodb');
+    app.log.error({ error }, 'Error Connecting to mongodb');
     // Do not let the database connection hanging
     app.addHook('onClose', async () => {
-      await opts.connection.close();
+      await connection.disconnect();
     });
   }
 }
-
-export default fastifyPlugin(mongoose, {
-  name: 'Mongoose',
-});
