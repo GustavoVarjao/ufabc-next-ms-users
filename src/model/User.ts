@@ -1,7 +1,9 @@
-import { Model, ObjectId, Schema, model } from 'mongoose';
+import { type Model, type ObjectId, Schema, model } from 'mongoose';
+import { sign as jwtSign } from 'jsonwebtoken';
 import { uniqBy } from 'remeda';
-import { User } from './zod/UserSchema';
 import { Unpacked } from 'types/unpacked';
+import { User } from './zod/UserSchema';
+import { Config } from '@/config/secret';
 
 // TODO: Create the methods for email Confirmation and generateJWT
 
@@ -10,6 +12,7 @@ type UserMethods = {
   removeDevice(deviceId: ObjectId): Array<ObjectId>;
   sendNotification(title: string, body: {}): Promise<any>;
   sendConfirmation(): Promise<void>;
+  generateJWT(): void;
 };
 
 type UserModel = Model<User, {}, UserMethods>;
@@ -37,6 +40,12 @@ const userSchema = new Schema<User, UserModel, UserMethods>({
     type: Boolean,
     default: true,
   },
+  oauth: {
+    email: String,
+    provider: String,
+    providerId: String,
+    picture: String,
+  },
 });
 
 userSchema.virtual('isFilled').get(function () {
@@ -54,6 +63,19 @@ userSchema.method(
 
 userSchema.method('removeDevice', function (this: User, deviceId: string) {
   this.devices = this.devices.filter((device) => device.deviceId !== deviceId);
+});
+
+userSchema.method('generateJWT', function () {
+  return jwtSign(
+    {
+      _id: this._id,
+      ra: this.ra,
+      confirmed: this.confirmed,
+      email: this.email,
+      permissions: this.permissions,
+    },
+    Config.JWT_SECRET,
+  );
 });
 
 userSchema.pre('save', async function (this: any) {

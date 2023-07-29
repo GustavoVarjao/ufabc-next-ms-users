@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import { config } from '@/config/secret';
+import { Config } from '@/config/secret';
 import { connectToMongo } from '../database/connection';
 import { dynamicImportAllFiles } from './dynamic-import-all-files';
 
@@ -29,7 +29,7 @@ async function populate() {
     // DO NOT CHANGE THIS
   } satisfies PopulateOptions;
 
-  if (config.NODE_ENV === 'prod') {
+  if (Config.NODE_ENV === 'prod') {
     throw new Error('You cannot populate under production mode!!!');
   }
 

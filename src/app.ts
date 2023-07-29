@@ -1,33 +1,31 @@
 import { fastify, type FastifyServerOptions } from 'fastify';
 import { fastifyAutoload } from '@fastify/autoload';
-import { fastifyRedis } from '@fastify/redis';
-import { fastifyJwt } from '@fastify/jwt';
-
+import { fastifyCors } from '@fastify/cors';
 import { join } from 'node:path';
-
-import { config } from './config/secret';
 import { nextUsageRoute } from './modules/nextUsage';
 import { healthCheckRoute } from './modules/healthCheck';
+import { completeAccount } from './modules/user/complete/dummy-route';
+import { Config } from './config/secret';
 
 export async function buildApp(opts: FastifyServerOptions = {}) {
   const app = fastify(opts);
+
   try {
     app.register(fastifyAutoload, {
       dir: join(__dirname, 'plugins'),
+      dirNameRoutePrefix: false,
+      options: Config,
+      maxDepth: 1,
+      encapsulate: false,
     });
-    app.register(fastifyRedis, {
-      host: config.HOST,
-      password: config.REDIS_PASSWORD,
-      port: config.REDIS_PORT,
-      family: 4, // IPV4,
-    });
-    app.register(fastifyJwt, {
-      secret: config.JWT_SECRET,
+    app.register(fastifyCors, {
+      origin: '*',
     });
     app.register(healthCheckRoute, { prefix: '/v2' });
     app.register(nextUsageRoute, { prefix: '/v2' });
+    app.register(completeAccount, { prefix: '/v2' });
   } catch (error) {
-    app.log.fatal('setup app error', error);
+    app.log.fatal({ error }, 'setup app error');
     throw error;
   }
 
