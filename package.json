@@ -33,7 +33,6 @@
   "devDependencies": {
     "@commitlint/cli": "17.6.1",
     "@commitlint/config-conventional": "17.6.1",
-    "@rocketseat/eslint-config": "^1.2.0",
     "@types/jsonwebtoken": "^9.0.2",
     "@types/lodash": "^4.14.194",
     "@types/node": "^18.15.11",
