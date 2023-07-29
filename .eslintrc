@@ -1,5 +1,21 @@
 {
-  "extends": ["@rocketseat/eslint-config/node", "plugin:vitest-globals/recommended"],
+  "extends": [
+    "@rocketseat/eslint-config/node",
+    "plugin:vitest-globals/recommended",
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/recommended-type-checked"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": [
+      "**/tsconfig.json"
+    ]
+  },
+  "plugins": [
+    "@typescript-eslint"
+  ],
+  "root": true,
   "env": {
     "vitest-globals/env": "true"
   },
@@ -13,14 +29,18 @@
         "trailingComma": "all",
         "arrowParens": "always",
         "semi": true
-      }
+      },
     ],
     "import/no-default-export": "error",
-    "no-redeclare": "off"
+    "no-redeclare": "off",
+    "no-void": "off"
   },
   "overrides": [
     {
-      "files": ["src/plugins/**/*", "src/routes/**"],
+      "files": [
+        "src/plugins/**/*",
+        "src/routes/**"
+      ],
       "rules": {
         "import/no-default-export": "off"
       }
