@@ -37,7 +37,7 @@ export default async function oauth2(app: FastifyInstance, opts: Config) {
         },
       },
       config: fastifyOauth2.FACEBOOK_CONFIGURATION,
-      scope: ['profile', 'email'],
+      scope: ['public_profile', 'email'],
       getUserDetails: getFacebookUserDetails,
     },
   } satisfies Providers;
