@@ -32,7 +32,7 @@ export default async function oauth2(app: FastifyInstance, opts: Config) {
     facebook: {
       credentials: {
         client: {
-          id: opts.OAUTH_FACEBOOK_KEY,
+          id: opts.OAUTH_FACEBOOK_CLIENT_ID,
           secret: opts.OAUTH_FACEBOOK_SECRET,
         },
       },
@@ -79,7 +79,6 @@ export default async function oauth2(app: FastifyInstance, opts: Config) {
           let user = await UserModel.findOne({
             $or: findUserQuery,
           });
-          // Might need to change the oauth schema for the new version
           if (user) {
             if (userId) {
               user.set('active', true);
